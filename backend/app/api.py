@@ -17,15 +17,10 @@ app = FastAPI(title="AI News Digest API", version="1.0.0")
 
 CLIENT_URL = os.getenv("CLIENT_URL", "http://localhost:5173")
 
-origins = [
-    CLIENT_URL,
-    "http://localhost:5173"
-]
-
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[CLIENT_URL],
+    allow_origins=[CLIENT_URL, "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

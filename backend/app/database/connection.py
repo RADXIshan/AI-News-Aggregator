@@ -60,8 +60,8 @@ engine = create_engine(
     get_database_url(),
     pool_pre_ping=True,  # Verify connections before using them
     pool_recycle=300,    # Recycle connections after 5 minutes
-    pool_size=5,         # Maintain 5 connections in the pool
-    max_overflow=10,     # Allow up to 10 additional connections
+    pool_size=1,         # Serverless: use minimal pool size
+    max_overflow=0,      # Serverless: no overflow connections
     connect_args={
         "sslmode": "require",
         "connect_timeout": 10
