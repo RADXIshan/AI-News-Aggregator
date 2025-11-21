@@ -13,7 +13,6 @@ class EmailIntroduction(BaseModel):
     greeting: str = Field(description="Personalized greeting with user's name and date")
     introduction: str = Field(description="2-3 sentence overview of what's in the top 10 ranked articles")
 
-
 class RankedArticleDetail(BaseModel):
     digest_id: str
     rank: int
