@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: RAGChatBot
+    runtime: python
+    plan: free # Free tier: 512 MB RAM, spins down after 15 min inactivity
+    buildCommand: "pip install uv && uv sync && pip install -r requirements.txt"
+    startCommand: "uv run uvicorn app.api:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: CLIENT_URL
+        value: https://ai-news-digest-aggregator.vercel.app
