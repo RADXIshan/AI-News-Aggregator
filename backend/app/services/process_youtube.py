@@ -14,9 +14,12 @@ TRANSCRIPT_UNAVAILABLE_MARKER = "__UNAVAILABLE__"
 
 def process_youtube_transcripts(limit: Optional[int] = None) -> dict:
     scraper = YouTubeScraper()
-    repo = Repository()
     
+    # Get videos with a fresh session
+    repo = Repository()
     videos = repo.get_youtube_videos_without_transcript(limit=limit)
+    repo.session.close()  # Release the connection
+    
     processed = 0
     unavailable = 0
     failed = 0
@@ -24,14 +27,19 @@ def process_youtube_transcripts(limit: Optional[int] = None) -> dict:
     for video in videos:
         try:
             transcript_result = scraper.get_transcript(video.video_id)
+            # Use a fresh session for each update
+            repo = Repository()
             if transcript_result:
                 repo.update_youtube_video_transcript(video.video_id, transcript_result.text)
                 processed += 1
             else:
                 repo.update_youtube_video_transcript(video.video_id, TRANSCRIPT_UNAVAILABLE_MARKER)
                 unavailable += 1
+            repo.session.close()  # Release the connection
         except Exception as e:
+            repo = Repository()
             repo.update_youtube_video_transcript(video.video_id, TRANSCRIPT_UNAVAILABLE_MARKER)
+            repo.session.close()  # Release the connection
             unavailable += 1
             print(f"Error processing video {video.video_id}: {e}")
     

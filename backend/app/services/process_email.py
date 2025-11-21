@@ -23,9 +23,11 @@ def generate_email_digest(hours: int = 24, top_n: int = 10) -> EmailDigestRespon
     user_profile = get_user_profile()
     curator = CuratorAgent(user_profile)
     email_agent = EmailAgent(user_profile)
-    repo = Repository()
     
+    repo = Repository()
     digests = repo.get_recent_digests(hours=hours)
+    repo.session.close()  # Release the connection
+    
     total = len(digests)
     
     if total == 0:
@@ -250,6 +252,7 @@ def send_digest_email(hours: int = 24, top_n: int = 10) -> dict:
         # Get all active subscribers
         repo = Repository()
         subscribers = repo.get_all_emails(active_only=True)
+        repo.session.close()  # Release the connection
         
         if not subscribers:
             logger.warning("No active subscribers found")
@@ -263,7 +266,10 @@ def send_digest_email(hours: int = 24, top_n: int = 10) -> dict:
         user_profile = get_user_profile()  # Use default profile for ranking
         curator = CuratorAgent(user_profile)
         
+        repo = Repository()
         digests = repo.get_recent_digests(hours=hours)
+        repo.session.close()  # Release the connection
+        
         total = len(digests)
         
         if total == 0:

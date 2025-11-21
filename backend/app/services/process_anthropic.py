@@ -12,9 +12,12 @@ from app.database.repository import Repository
 
 def process_anthropic_markdown(limit: Optional[int] = None) -> dict:
     scraper = AnthropicScraper()
-    repo = Repository()
     
+    # Get articles with a fresh session
+    repo = Repository()
     articles = repo.get_anthropic_articles_without_markdown(limit=limit)
+    repo.session.close()  # Release the connection
+    
     processed = 0
     failed = 0
     
@@ -22,7 +25,10 @@ def process_anthropic_markdown(limit: Optional[int] = None) -> dict:
         markdown = scraper.url_to_markdown(article.url)
         try:
             if markdown:
+                # Use a fresh session for each update
+                repo = Repository()
                 repo.update_anthropic_article_markdown(article.guid, markdown)
+                repo.session.close()  # Release the connection
                 processed += 1
             else:
                 failed += 1

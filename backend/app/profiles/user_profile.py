@@ -12,15 +12,18 @@ def get_user_profile(email: str = None) -> dict:
     # Default name if no user found
     user_name = "User"
     
-    if email:
-        user = repo.get_email_by_address(email)
-        if user and user.name:
-            user_name = user.name
-    else:
-        # Get first active user
-        users = repo.get_all_emails(active_only=True)
-        if users and users[0].name:
-            user_name = users[0].name
+    try:
+        if email:
+            user = repo.get_email_by_address(email)
+            if user and user.name:
+                user_name = user.name
+        else:
+            # Get first active user
+            users = repo.get_all_emails(active_only=True)
+            if users and users[0].name:
+                user_name = users[0].name
+    finally:
+        repo.session.close()  # Always release the connection
     
     return {
         "name": user_name,

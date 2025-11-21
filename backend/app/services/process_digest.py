@@ -18,9 +18,12 @@ logger = logging.getLogger(__name__)
 
 def process_digests(limit: Optional[int] = None) -> dict:
     agent = DigestAgent()
-    repo = Repository()
     
+    # Get articles with a fresh session
+    repo = Repository()
     articles = repo.get_articles_without_digest(limit=limit)
+    repo.session.close()  # Release the connection
+    
     total = len(articles)
     processed = 0
     failed = 0
@@ -42,6 +45,8 @@ def process_digests(limit: Optional[int] = None) -> dict:
             )
             
             if digest_result:
+                # Use a fresh session for each digest creation
+                repo = Repository()
                 repo.create_digest(
                     article_type=article_type,
                     article_id=article_id,
@@ -50,6 +55,7 @@ def process_digests(limit: Optional[int] = None) -> dict:
                     summary=digest_result.summary,
                     published_at=article.get("published_at")
                 )
+                repo.session.close()  # Release the connection
                 processed += 1
                 logger.info(f"✓ Successfully created digest for {article_type} {article_id}")
             else:
