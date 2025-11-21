@@ -3,10 +3,36 @@ name = "ai-news-digest-backend"
 version = "1.0.0"
 description = "AI News Digest API Backend"
 requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.121.3",
+    "uvicorn[standard]==0.34.0",
+    "python-multipart==0.0.20",
+    "pydantic[email]==2.12.4",
+    "sqlalchemy==2.0.44",
+    "psycopg2-binary==2.9.11",
+    "requests==2.32.5",
+    "beautifulsoup4==4.14.2",
+    "feedparser==6.0.12",
+    "html2text==2025.4.15",
+    "youtube-transcript-api==1.2.3",
+    "google-genai==1.51.0",
+    "python-dotenv==1.2.1",
+    "markdown==3.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.24.0",
+]
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
 
 [tool.vercel]
 python-version = "3.12"
