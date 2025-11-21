@@ -77,10 +77,9 @@ def digest_to_html(digest_response: EmailDigestResponse) -> str:
     
     # Build articles HTML
     articles_html = []
-    for idx, article in enumerate(digest_response.articles, 1):
+    for article in digest_response.articles:
         article_html = f"""
         <div class="article">
-            <div class="article-number">#{idx}</div>
             <h2 class="article-title">{html.escape(article.title)}</h2>
             <div class="article-meta">
                 <span class="article-type">{html.escape(article.article_type.upper())}</span>
@@ -153,27 +152,11 @@ def digest_to_html(digest_response: EmailDigestResponse) -> str:
                 border-radius: 8px;
                 position: relative;
             }}
-            .article-number {{
-                position: absolute;
-                top: 20px;
-                right: 20px;
-                background: #667eea;
-                color: white;
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 14px;
-                font-weight: 700;
-                line-height: 1;
-            }}
             .article-title {{
                 font-size: 18px;
                 font-weight: 600;
                 color: #1a1a1a;
-                margin: 0 40px 10px 0;
+                margin: 0 0 10px 0;
                 line-height: 1.4;
             }}
             .article-meta {{

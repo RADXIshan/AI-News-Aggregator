@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-"""
-Script to manage email recipients in the database
-"""
 import sys
 from pathlib import Path
 
