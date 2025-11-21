@@ -6,6 +6,20 @@ An intelligent, automated news aggregation system that scrapes, processes, and c
 
 > **📧 Email Service:** Uses Gmail SMTP for reliable email delivery to any recipient. No domain verification required!
 
+## 📸 Screenshots
+
+### Homepage
+![Homepage](frontend/src/assets/home.png)
+*Beautiful, modern landing page with hero section and feature highlights*
+
+### Subscription Form
+![Subscription Form](frontend/src/assets/subform.png)
+*User-friendly subscription form with real-time validation*
+
+### Email Confirmation
+![Email Confirmation](frontend/src/assets/mail.png)
+*Instant email confirmation sent to new subscribers*
+
 ## ✨ Features
 
 ### Web Subscription System
