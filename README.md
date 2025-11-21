@@ -2,6 +2,8 @@
 
 An intelligent, automated news aggregation system that scrapes, processes, and curates AI-related content from multiple sources, then delivers personalized daily digests via email. Features a beautiful web interface for user subscriptions with instant email confirmation.
 
+> **🌐 Live Demo:** [https://ai-news-aggregator-digest.vercel.app](https://ai-news-aggregator-digest.vercel.app)
+
 > **📧 Email Service:** Uses Gmail SMTP for reliable email delivery to any recipient. No domain verification required!
 
 ## ✨ Features
