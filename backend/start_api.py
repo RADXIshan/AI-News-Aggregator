@@ -1,5 +1,5 @@
 from app.api import app
+import uvicorn
 
-# Export app for Vercel serverless
-# The variable name must be 'app' for Vercel to detect it
-app = app
+if __name__ == "__main__":
+    uvicorn.run("app.api:app", host="0.0.0.0", port=8000)
