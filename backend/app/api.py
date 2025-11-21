@@ -233,3 +233,7 @@ async def trigger_daily_digest():
     except Exception as e:
         logger.error(f"Error triggering daily digest: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to run daily digest: {str(e)}")
+
+# Vercel serverless handler
+from mangum import Mangum
+handler = Mangum(app)
