@@ -118,12 +118,6 @@ cd frontend && npm run dev
 
 ### Backend Setup
 
-**Using uv (recommended):**
-```bash
-uv sync
-```
-
-**Using pip:**
 ```bash
 pip install -r requirements.txt
 ```
