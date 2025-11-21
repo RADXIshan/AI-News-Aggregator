@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import feedparser
-from docling.document_converter import DocumentConverter
 from pydantic import BaseModel
+from app.utils.markdown_converter import MarkdownConverter
 
 
 class GoogleArticle(BaseModel):
@@ -18,7 +18,7 @@ class GoogleScraper:
     def __init__(self):
         # Google AI blog RSS feed
         self.rss_url = "https://blog.google/technology/ai/rss/"
-        self.converter = DocumentConverter()
+        self.converter = MarkdownConverter()
 
     def get_articles(self, hours: int = 24) -> List[GoogleArticle]:
         feed = feedparser.parse(self.rss_url)
@@ -48,11 +48,7 @@ class GoogleScraper:
         return articles
 
     def url_to_markdown(self, url: str) -> Optional[str]:
-        try:
-            result = self.converter.convert(url)
-            return result.document.export_to_markdown()
-        except Exception:
-            return None
+        return self.converter.convert_url(url)
 
 
 if __name__ == "__main__":

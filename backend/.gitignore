@@ -88,6 +88,10 @@ target/
 
 # Virtual environment
 .venv/
+venv/
+
+# Vercel
+.vercel
 
 # Alembic migrations
 app/alembic/versions/*
