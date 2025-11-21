@@ -20,7 +20,7 @@ CLIENT_URL = os.getenv("CLIENT_URL", "http://localhost:5173")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai-news-aggregator-pakr.vercel.app", CLIENT_URL, "http://localhost:5173"],  # Allow all origins for now
+    allow_origins=["https://ai-news-aggregator-server.vercel.app", CLIENT_URL, "http://localhost:5173"],  # Allow all origins for now
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
