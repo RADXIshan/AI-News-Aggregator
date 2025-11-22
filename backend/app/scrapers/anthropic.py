@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import feedparser
+import requests
 from pydantic import BaseModel
 from app.utils.markdown_converter import MarkdownConverter
 
@@ -30,7 +31,9 @@ class AnthropicScraper:
         seen_guids = set()
         
         for rss_url in self.rss_urls:
-            feed = feedparser.parse(rss_url)
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            response = requests.get(rss_url, headers=headers)
+            feed = feedparser.parse(response.content)
             if not feed.entries:
                 continue
             

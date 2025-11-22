@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import feedparser
+import requests
 from pydantic import BaseModel
 from app.utils.markdown_converter import MarkdownConverter
 
@@ -21,7 +22,9 @@ class GoogleScraper:
         self.converter = MarkdownConverter()
 
     def get_articles(self, hours: int = 24) -> List[GoogleArticle]:
-        feed = feedparser.parse(self.rss_url)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        response = requests.get(self.rss_url, headers=headers)
+        feed = feedparser.parse(response.content)
         if not feed.entries:
             return []
         
