@@ -200,6 +200,7 @@ async def trigger_daily_digest():
     from app.daily_runner import run_daily_pipeline
     import asyncio
     from concurrent.futures import ThreadPoolExecutor
+    import traceback
     
     logger.info("Daily digest triggered via API endpoint")
     
@@ -222,10 +223,17 @@ async def trigger_daily_digest():
                 "processing": result.get("processing", {}),
                 "digests": result.get("digests", {}),
                 "email_sent": result.get("success", False),
-                "duration_seconds": result.get("duration_seconds", 0)
+                "duration_seconds": result.get("duration_seconds", 0),
+                "error": result.get("error")
             }
         }
     except Exception as e:
-        logger.error(f"Error triggering daily digest: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to run daily digest: {str(e)}")
+        error_details = traceback.format_exc()
+        logger.error(f"Error triggering daily digest: {str(e)}\n{error_details}")
+        return {
+            "success": False,
+            "message": "Daily digest pipeline failed",
+            "error": str(e),
+            "traceback": error_details
+        }
 
