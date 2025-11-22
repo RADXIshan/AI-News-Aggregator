@@ -17,7 +17,6 @@ app = FastAPI(title="AI News Digest API", version="1.0.0")
 
 CLIENT_URL = os.getenv("CLIENT_URL", "http://localhost:5173")
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://ai-news-aggregator-digest.vercel.app", CLIENT_URL, "http://localhost:5173", "https://ai-digest-cron.trickster10ishan.workers.dev"],  # Allow all origins for now
@@ -25,7 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 class SubscribeRequest(BaseModel):
     email: EmailStr
