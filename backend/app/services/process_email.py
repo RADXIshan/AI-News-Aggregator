@@ -1,6 +1,6 @@
 import logging
 import html
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,6 +10,7 @@ from app.agent.curator_agent import CuratorAgent
 from app.profiles.user_profile import get_user_profile
 from app.database.repository import Repository
 from app.services.email_service import EmailService
+from app.config import USER_TIMEZONE
 
 logging.basicConfig(
     level=logging.INFO,
@@ -75,7 +76,7 @@ def digest_to_html(digest_response: EmailDigestResponse) -> str:
     """
     Convert EmailDigestResponse to beautiful HTML email
     """
-    current_date = datetime.now().strftime('%B %d, %Y')
+    current_date = datetime.now(timezone.utc).astimezone(USER_TIMEZONE).strftime('%B %d, %Y')
     
     # Build articles HTML
     articles_html = []
@@ -306,7 +307,7 @@ def send_digest_email(hours: int = 24, top_n: int = 10) -> dict:
         
         # Send personalized email to each subscriber
         email_service = EmailService()
-        current_date = datetime.now().strftime('%B %d, %Y')
+        current_date = datetime.now(timezone.utc).astimezone(USER_TIMEZONE).strftime('%B %d, %Y')
         subject = f"Your Daily AI News Digest - {current_date} 📰"
         
         sent_count = 0

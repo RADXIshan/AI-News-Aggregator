@@ -1,12 +1,13 @@
 import os
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from google import genai
 from google.genai.errors import ClientError
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from app.config import USER_TIMEZONE
 
 load_dotenv()
 
@@ -82,8 +83,9 @@ class EmailAgent:
 
     def generate_introduction(self, ranked_articles: List) -> EmailIntroduction:
         if not ranked_articles:
+            current_date = datetime.now(timezone.utc).astimezone(USER_TIMEZONE).strftime('%B %d, %Y')
             return EmailIntroduction(
-                greeting=f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {datetime.now().strftime('%B %d, %Y')}.",
+                greeting=f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}.",
                 introduction="No articles were ranked today."
             )
         
@@ -93,7 +95,7 @@ class EmailAgent:
             for idx, article in enumerate(top_articles)
         ])
         
-        current_date = datetime.now().strftime('%B %d, %Y')
+        current_date = datetime.now(timezone.utc).astimezone(USER_TIMEZONE).strftime('%B %d, %Y')
         user_prompt = f"""{EMAIL_PROMPT}
 
 Create an email introduction for {self.user_profile['name']} for {current_date}.
@@ -138,8 +140,9 @@ Return your response as JSON with the following structure:
                 result = json.loads(response_text)
                 
                 intro = EmailIntroduction(**result)
+                current_date_check = datetime.now(timezone.utc).astimezone(USER_TIMEZONE).strftime('%B %d, %Y')
                 if not intro.greeting.startswith(f"Hey {self.user_profile['name']}"):
-                    intro.greeting = f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}."
+                    intro.greeting = f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date_check}."
                 
                 return intro
                 
@@ -172,7 +175,7 @@ Return your response as JSON with the following structure:
                 break
         
         # Fallback
-        current_date = datetime.now().strftime('%B %d, %Y')
+        current_date = datetime.now(timezone.utc).astimezone(USER_TIMEZONE).strftime('%B %d, %Y')
         return EmailIntroduction(
             greeting=f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}.",
             introduction="Here are the top 10 AI news articles ranked by relevance to your interests."
