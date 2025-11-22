@@ -18,7 +18,7 @@ dependencies = [
     "google-genai==1.51.0",
     "python-dotenv==1.2.1",
     "markdown==3.7",
-    "docling"ß
+    "docling==2.63.0"
 ]
 
 [project.optional-dependencies]
