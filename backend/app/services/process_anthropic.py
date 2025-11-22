@@ -13,35 +13,34 @@ from app.database.repository import Repository
 def process_anthropic_markdown(limit: Optional[int] = None) -> dict:
     scraper = AnthropicScraper()
     
-    # Get articles with a fresh session
+    # Use a single repository instance with proper session management
     repo = Repository()
-    articles = repo.get_anthropic_articles_without_markdown(limit=limit)
-    repo.session.close()  # Release the connection
-    
-    processed = 0
-    failed = 0
-    
-    for article in articles:
-        markdown = scraper.url_to_markdown(article.url)
-        try:
-            if markdown:
-                # Use a fresh session for each update
-                repo = Repository()
-                repo.update_anthropic_article_markdown(article.guid, markdown)
-                repo.session.close()  # Release the connection
-                processed += 1
-            else:
+    try:
+        articles = repo.get_anthropic_articles_without_markdown(limit=limit)
+        
+        processed = 0
+        failed = 0
+        
+        for article in articles:
+            try:
+                markdown = scraper.url_to_markdown(article.url)
+                if markdown:
+                    repo.update_anthropic_article_markdown(article.guid, markdown)
+                    processed += 1
+                else:
+                    failed += 1
+            except Exception as e:
                 failed += 1
-        except Exception as e:
-            failed += 1
-            print(f"Error processing article {article.guid}: {e}")
-            continue
-    
-    return {
-        "total": len(articles),
-        "processed": processed,
-        "failed": failed
-    }
+                print(f"Error processing article {article.guid}: {e}")
+                continue
+        
+        return {
+            "total": len(articles),
+            "processed": processed,
+            "failed": failed
+        }
+    finally:
+        repo.session.close()  # Always close the session
 
 
 if __name__ == "__main__":

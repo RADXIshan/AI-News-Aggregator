@@ -81,13 +81,16 @@ def run_scrapers(hours: int = 24) -> dict:
     repo = Repository()
     results = {}
 
-    for name, scraper, save_func in SCRAPER_REGISTRY:
-        try:
-            items = save_func(scraper, repo, hours)
-            results[name] = items
-        except Exception as e:
-            logger.error(f"Failed to scrape {name}: {e}", exc_info=True)
-            results[name] = []
+    try:
+        for name, scraper, save_func in SCRAPER_REGISTRY:
+            try:
+                items = save_func(scraper, repo, hours)
+                results[name] = items
+            except Exception as e:
+                logger.error(f"Failed to scrape {name}: {e}", exc_info=True)
+                results[name] = []
+    finally:
+        repo.session.close()
 
     return results
 

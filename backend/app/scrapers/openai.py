@@ -2,8 +2,8 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import feedparser
 import requests
-from docling.document_converter import DocumentConverter
 from pydantic import BaseModel
+from app.utils.markdown_converter import MarkdownConverter
 
 
 class OpenAIArticle(BaseModel):
@@ -18,7 +18,7 @@ class OpenAIArticle(BaseModel):
 class OpenAIScraper:
     def __init__(self):
         self.rss_url = "https://openai.com/news/rss.xml"
-        self.converter = DocumentConverter()
+        self.converter = MarkdownConverter()
 
     def get_articles(self, hours: int = 24) -> List[OpenAIArticle]:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
@@ -48,6 +48,9 @@ class OpenAIScraper:
                 ))
         
         return articles
+
+    def url_to_markdown(self, url: str) -> Optional[str]:
+        return self.converter.convert_url(url)
 
   
 if __name__ == "__main__":
