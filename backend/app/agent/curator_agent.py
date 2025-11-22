@@ -1,7 +1,9 @@
 import os
 import json
+import time
 from typing import List
 from google import genai
+from google.genai.errors import ClientError
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -46,6 +48,8 @@ class CuratorAgent:
         self.model = "gemini-2.5-flash"
         self.user_profile = user_profile
         self.system_prompt = self._build_system_prompt()
+        self.last_request_time = 0
+        self.min_request_interval = 6.5  # 6.5 seconds between requests
 
     def _build_system_prompt(self) -> str:
         interests = "\n".join(f"- {interest}" for interest in self.user_profile["interests"])
@@ -64,6 +68,15 @@ Interests:
 
 Preferences:
 {pref_text}"""
+
+    def _rate_limit(self):
+        """Ensure we don't exceed rate limits by spacing out requests"""
+        elapsed = time.time() - self.last_request_time
+        if elapsed < self.min_request_interval:
+            sleep_time = self.min_request_interval - elapsed
+            print(f"Rate limiting: waiting {sleep_time:.1f}s...")
+            time.sleep(sleep_time)
+        self.last_request_time = time.time()
 
     def rank_digests(self, digests: List[dict]) -> List[RankedArticle]:
         if not digests:
@@ -94,37 +107,69 @@ Return your response as JSON with the following structure:
   ]
 }}"""
 
-        try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=user_prompt,
-                config={"response_mime_type": "application/json"}
-            )
-            
-            # Clean the response text
-            response_text = response.text.strip()
-            
-            # Remove markdown code blocks if present
-            if response_text.startswith("```json"):
-                response_text = response_text[7:]
-            if response_text.startswith("```"):
-                response_text = response_text[3:]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
-            
-            # Try to parse JSON
+        max_retries = 3
+        base_delay = 10
+        
+        for attempt in range(max_retries):
             try:
-                result = json.loads(response_text)
-            except json.JSONDecodeError as json_err:
-                print(f"JSON decode error: {json_err}")
-                print(f"Response text: {response_text[:500]}")
+                # Rate limit before making request
+                self._rate_limit()
+                
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=user_prompt,
+                    config={"response_mime_type": "application/json"}
+                )
+                
+                # Clean the response text
+                response_text = response.text.strip()
+                
+                # Remove markdown code blocks if present
+                if response_text.startswith("```json"):
+                    response_text = response_text[7:]
+                if response_text.startswith("```"):
+                    response_text = response_text[3:]
+                if response_text.endswith("```"):
+                    response_text = response_text[:-3]
+                response_text = response_text.strip()
+                
+                # Try to parse JSON
+                try:
+                    result = json.loads(response_text)
+                except json.JSONDecodeError as json_err:
+                    print(f"JSON decode error: {json_err}")
+                    print(f"Response text: {response_text[:500]}")
+                    return []
+                
+                ranked_list = RankedDigestList(**result)
+                return ranked_list.articles if ranked_list else []
+                
+            except ClientError as e:
+                if e.status_code == 429:  # Rate limit error
+                    if attempt < max_retries - 1:
+                        retry_delay = base_delay * (2 ** attempt)
+                        try:
+                            import re
+                            match = re.search(r'(\d+\.?\d*)s', str(e))
+                            if match:
+                                retry_delay = float(match.group(1)) + 1
+                        except:
+                            pass
+                        
+                        print(f"Rate limit hit. Retrying in {retry_delay:.1f}s... (attempt {attempt + 1}/{max_retries})")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print(f"Rate limit exceeded after {max_retries} attempts: {e}")
+                        return []
+                else:
+                    print(f"API error: {e}")
+                    return []
+                    
+            except Exception as e:
+                print(f"Error ranking digests: {e}")
+                import traceback
+                traceback.print_exc()
                 return []
-            
-            ranked_list = RankedDigestList(**result)
-            return ranked_list.articles if ranked_list else []
-        except Exception as e:
-            print(f"Error ranking digests: {e}")
-            import traceback
-            traceback.print_exc()
-            return []
+        
+        return []

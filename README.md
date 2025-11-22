@@ -196,26 +196,9 @@ python3 -m app.database.init_db
 
 ### Environment Variables
 
-Create a `.env` file in the project root with the following configuration:
+**Backend Configuration** (`backend/.env`):
 
 ```env
-# AI News Digest - Environment Variables
-# Copy this file to .env and fill in your actual values
-
-# ============================================================================
-# DATABASE CONFIGURATION
-# ============================================================================
-# PostgreSQL connection string (recommended for Neon, Supabase, etc.)
-# Format: postgresql://username:password@host:port/database?sslmode=require
-DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
-
-# Alternative: Individual PostgreSQL parameters (fallback if DATABASE_URL not set)
-# POSTGRES_USER=postgres
-# POSTGRES_PASSWORD=postgres
-# POSTGRES_HOST=localhost
-# POSTGRES_PORT=5432
-# POSTGRES_DB=ai_news_aggregator
-
 # ============================================================================
 # AI CONFIGURATION
 # ============================================================================
@@ -233,31 +216,37 @@ MY_EMAIL=your_email@gmail.com
 # Setup guide:
 # 1. Enable 2-factor authentication: https://myaccount.google.com/security
 # 2. Generate App Password: https://myaccount.google.com/apppasswords
-# 3. Use the 16-character password here
-APP_PASSWORD=your_16_char_app_password
+# 3. Use the 16-character password here (spaces optional)
+APP_PASSWORD=xxxx xxxx xxxx xxxx
 
 # ============================================================================
-# APPLICATION SETTINGS
+# DATABASE CONFIGURATION
 # ============================================================================
-# Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-LOG_LEVEL=INFO
+# PostgreSQL connection string (Neon, Supabase, or local)
+# Format: postgresql://username:password@host:port/database?sslmode=require
+DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
 
 # ============================================================================
-# NOTES
+# FRONTEND URL (for CORS)
 # ============================================================================
-# 1. Never commit this file with real values to version control
-# 2. Keep your API keys and passwords secure
-# 3. Use different values for development and production
-# 4. Gmail free tier: 500 emails/day (plenty for most newsletters!)
-# 5. No domain verification needed - works immediately!
+# Frontend URL for CORS configuration
+CLIENT_URL=http://localhost:5173
+```
+
+**Frontend Configuration** (`frontend/.env`):
+
+```env
+# Backend API URL
+VITE_BASE_URL=http://localhost:8000
 ```
 
 **Important Notes:**
 - Use your Gmail address for `MY_EMAIL`
-- Generate an App Password (NOT your regular Gmail password) - see setup guide above
+- Generate an App Password (NOT your regular Gmail password)
 - Gmail allows 500 emails/day on free tier - perfect for newsletters!
 - No domain verification needed - works immediately!
 - Get your Gemini API key for free from Google AI Studio
+- Never commit `.env` files with real values to version control
 
 ### Frontend Configuration
 

@@ -1,8 +1,10 @@
 import os
 import json
+import time
 from datetime import datetime
 from typing import List, Optional
 from google import genai
+from google.genai.errors import ClientError
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -66,6 +68,17 @@ class EmailAgent:
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
         self.model = "gemini-2.5-flash"
         self.user_profile = user_profile
+        self.last_request_time = 0
+        self.min_request_interval = 6.5  # 6.5 seconds between requests
+
+    def _rate_limit(self):
+        """Ensure we don't exceed rate limits by spacing out requests"""
+        elapsed = time.time() - self.last_request_time
+        if elapsed < self.min_request_interval:
+            sleep_time = self.min_request_interval - elapsed
+            print(f"Rate limiting: waiting {sleep_time:.1f}s...")
+            time.sleep(sleep_time)
+        self.last_request_time = time.time()
 
     def generate_introduction(self, ranked_articles: List) -> EmailIntroduction:
         if not ranked_articles:
@@ -96,41 +109,74 @@ Return your response as JSON with the following structure:
   "introduction": "string"
 }}"""
 
-        try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=user_prompt,
-                config={"response_mime_type": "application/json"}
-            )
-            
-            # Clean the response text
-            response_text = response.text.strip()
-            
-            # Remove markdown code blocks if present
-            if response_text.startswith("```json"):
-                response_text = response_text[7:]
-            if response_text.startswith("```"):
-                response_text = response_text[3:]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
-            
-            result = json.loads(response_text)
-            
-            intro = EmailIntroduction(**result)
-            if not intro.greeting.startswith(f"Hey {self.user_profile['name']}"):
-                intro.greeting = f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}."
-            
-            return intro
-        except Exception as e:
-            print(f"Error generating introduction: {e}")
-            import traceback
-            traceback.print_exc()
-            current_date = datetime.now().strftime('%B %d, %Y')
-            return EmailIntroduction(
-                greeting=f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}.",
-                introduction="Here are the top 10 AI news articles ranked by relevance to your interests."
-            )
+        max_retries = 3
+        base_delay = 10
+        
+        for attempt in range(max_retries):
+            try:
+                # Rate limit before making request
+                self._rate_limit()
+                
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=user_prompt,
+                    config={"response_mime_type": "application/json"}
+                )
+                
+                # Clean the response text
+                response_text = response.text.strip()
+                
+                # Remove markdown code blocks if present
+                if response_text.startswith("```json"):
+                    response_text = response_text[7:]
+                if response_text.startswith("```"):
+                    response_text = response_text[3:]
+                if response_text.endswith("```"):
+                    response_text = response_text[:-3]
+                response_text = response_text.strip()
+                
+                result = json.loads(response_text)
+                
+                intro = EmailIntroduction(**result)
+                if not intro.greeting.startswith(f"Hey {self.user_profile['name']}"):
+                    intro.greeting = f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}."
+                
+                return intro
+                
+            except ClientError as e:
+                if e.status_code == 429:  # Rate limit error
+                    if attempt < max_retries - 1:
+                        retry_delay = base_delay * (2 ** attempt)
+                        try:
+                            import re
+                            match = re.search(r'(\d+\.?\d*)s', str(e))
+                            if match:
+                                retry_delay = float(match.group(1)) + 1
+                        except:
+                            pass
+                        
+                        print(f"Rate limit hit. Retrying in {retry_delay:.1f}s... (attempt {attempt + 1}/{max_retries})")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print(f"Rate limit exceeded after {max_retries} attempts: {e}")
+                        break
+                else:
+                    print(f"API error: {e}")
+                    break
+                    
+            except Exception as e:
+                print(f"Error generating introduction: {e}")
+                import traceback
+                traceback.print_exc()
+                break
+        
+        # Fallback
+        current_date = datetime.now().strftime('%B %d, %Y')
+        return EmailIntroduction(
+            greeting=f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}.",
+            introduction="Here are the top 10 AI news articles ranked by relevance to your interests."
+        )
 
     def create_email_digest(self, ranked_articles: List[dict], limit: int = 10) -> EmailDigest:
         top_articles = ranked_articles[:limit]
