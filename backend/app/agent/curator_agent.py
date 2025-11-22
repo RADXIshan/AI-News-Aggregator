@@ -21,25 +21,59 @@ class RankedDigestList(BaseModel):
     articles: List[RankedArticle] = Field(description="List of ranked articles")
 
 
-CURATOR_PROMPT = """You are an expert AI news curator specializing in personalized content ranking for AI professionals.
+CURATOR_PROMPT = """You are an expert AI news curator with deep expertise in machine learning, AI research, and production systems.
 
-Your role is to analyze and rank AI-related news articles, research papers, and video content based on a user's specific profile, interests, and background.
+Your role is to analyze and rank AI-related content with precision, considering multiple dimensions of relevance and value.
 
-Ranking Criteria:
-1. Relevance to user's stated interests and background
-2. Technical depth and practical value
-3. Novelty and significance of the content
-4. Alignment with user's expertise level
-5. Actionability and real-world applicability
+RANKING METHODOLOGY:
 
-Scoring Guidelines:
-- 9.0-10.0: Highly relevant, directly aligns with user interests, significant value
-- 7.0-8.9: Very relevant, strong alignment with interests, good value
-- 5.0-6.9: Moderately relevant, some alignment, decent value
-- 3.0-4.9: Somewhat relevant, limited alignment, lower value
-- 0.0-2.9: Low relevance, minimal alignment, little value
+1. INTEREST ALIGNMENT (40% weight)
+   - Direct match with user's stated interests (highest priority)
+   - Related topics that complement their interests
+   - Emerging areas adjacent to their focus
+   - Consider both breadth and depth of coverage
 
-Rank articles from most relevant (rank 1) to least relevant. Ensure each article has a unique rank."""
+2. TECHNICAL DEPTH & QUALITY (25% weight)
+   - Substance over hype: prioritize technical details, benchmarks, code
+   - Research rigor: novel methods, ablation studies, reproducibility
+   - Production readiness: scalability, deployment considerations
+   - Avoid marketing fluff, vague claims, or superficial coverage
+
+3. PRACTICAL VALUE (20% weight)
+   - Actionable insights: can the reader apply this?
+   - Real-world impact: production case studies, benchmarks
+   - Implementation details: code, architecture, best practices
+   - Tools and frameworks that solve real problems
+
+4. NOVELTY & SIGNIFICANCE (10% weight)
+   - Breakthrough research or paradigm shifts
+   - Major product launches or capabilities
+   - Important industry trends or shifts
+   - Avoid rehashing old news or obvious content
+
+5. EXPERTISE ALIGNMENT (5% weight)
+   - Match content complexity to user's expertise level
+   - Advanced users: prefer research papers, deep dives, system design
+   - Avoid oversimplified content for advanced users
+   - Prefer content that challenges and educates
+
+SCORING GUIDELINES:
+- 9.5-10.0: Must-read. Directly addresses core interests with high technical value and practical impact
+- 8.5-9.4: Excellent. Strong alignment with interests, significant technical depth or practical value
+- 7.5-8.4: Very good. Clear relevance to interests with good technical content or actionable insights
+- 6.5-7.4: Good. Relevant to interests with decent technical depth or practical value
+- 5.5-6.4: Moderate. Some relevance but limited depth, novelty, or practical value
+- 4.0-5.4: Fair. Tangentially relevant or lacks technical substance
+- 2.0-3.9: Low. Minimal relevance, marketing-heavy, or superficial
+- 0.0-1.9: Very low. Off-topic, pure marketing, or no value
+
+CRITICAL RULES:
+- Be discriminating: use the full 0-10 scale, not just 7-10
+- Penalize marketing hype, vague claims, and superficial content
+- Reward technical depth, benchmarks, code, and real-world results
+- Consider recency: breaking news and fresh research rank higher
+- Ensure each article has a unique rank (no ties)
+- Provide specific, technical reasoning for each ranking"""
 
 
 class CuratorAgent:
@@ -52,22 +86,43 @@ class CuratorAgent:
         self.min_request_interval = 6.5  # 6.5 seconds between requests
 
     def _build_system_prompt(self) -> str:
-        interests = "\n".join(f"- {interest}" for interest in self.user_profile["interests"])
+        # Group interests by category for better context
+        interests = self.user_profile["interests"]
+        interests_text = "\n".join(f"  {i+1}. {interest}" for i, interest in enumerate(interests))
+        
         preferences = self.user_profile["preferences"]
-        pref_text = "\n".join(f"- {k}: {v}" for k, v in preferences.items())
+        pref_list = []
+        if preferences.get("prefer_practical"):
+            pref_list.append("✓ Prioritize practical, actionable content")
+        if preferences.get("prefer_technical_depth"):
+            pref_list.append("✓ Prioritize technical depth and rigor")
+        if preferences.get("prefer_research_breakthroughs"):
+            pref_list.append("✓ Prioritize novel research and breakthroughs")
+        if preferences.get("prefer_production_focus"):
+            pref_list.append("✓ Prioritize production systems and real-world deployments")
+        if preferences.get("avoid_marketing_hype"):
+            pref_list.append("✗ Penalize marketing hype and superficial content")
+        
+        pref_text = "\n".join(pref_list)
         
         return f"""{CURATOR_PROMPT}
 
-User Profile:
+═══════════════════════════════════════════════════════════════
+USER PROFILE
+═══════════════════════════════════════════════════════════════
+
 Name: {self.user_profile["name"]}
+Title: {self.user_profile.get("title", "AI Professional")}
 Background: {self.user_profile["background"]}
 Expertise Level: {self.user_profile["expertise_level"]}
 
-Interests:
-{interests}
+CORE INTERESTS (ranked by importance):
+{interests_text}
 
-Preferences:
-{pref_text}"""
+CONTENT PREFERENCES:
+{pref_text}
+
+═══════════════════════════════════════════════════════════════"""
 
     def _rate_limit(self):
         """Ensure we don't exceed rate limits by spacing out requests"""
@@ -82,27 +137,43 @@ Preferences:
         if not digests:
             return []
         
+        # Format digests with better structure
         digest_list = "\n\n".join([
-            f"ID: {d['id']}\nTitle: {d['title']}\nSummary: {d['summary']}\nType: {d['article_type']}"
-            for d in digests
+            f"[{i+1}] ID: {d['id']}\n"
+            f"    Type: {d['article_type']}\n"
+            f"    Title: {d['title']}\n"
+            f"    Summary: {d['summary']}"
+            for i, d in enumerate(digests)
         ])
         
         user_prompt = f"""{self.system_prompt}
 
-Rank these {len(digests)} AI news digests based on the user profile:
+TASK: Rank these {len(digests)} AI news articles
 
+ARTICLES TO RANK:
 {digest_list}
 
-Provide a relevance score (0.0-10.0) and rank (1-{len(digests)}) for each article, ordered from most to least relevant.
+INSTRUCTIONS:
+1. Analyze each article against the user profile using the 5 ranking criteria
+2. Assign a relevance score (0.0-10.0) using the full scale
+3. Rank from 1 (most relevant) to {len(digests)} (least relevant)
+4. Provide specific, technical reasoning for each score
+5. Be critical: penalize hype, reward substance
 
-Return your response as JSON with the following structure:
+IMPORTANT:
+- Use the FULL 0-10 scale (don't cluster scores in 7-10 range)
+- Each article must have a UNIQUE rank (no ties)
+- Reasoning should reference specific interests and criteria
+- Consider: interest alignment, technical depth, practical value, novelty, expertise fit
+
+Return your response as JSON:
 {{
   "articles": [
     {{
-      "digest_id": "string",
-      "relevance_score": float,
-      "rank": int,
-      "reasoning": "string"
+      "digest_id": "article_type:article_id",
+      "relevance_score": 8.5,
+      "rank": 1,
+      "reasoning": "Specific technical reason referencing user interests"
     }}
   ]
 }}"""
@@ -142,7 +213,24 @@ Return your response as JSON with the following structure:
                     return []
                 
                 ranked_list = RankedDigestList(**result)
-                return ranked_list.articles if ranked_list else []
+                articles = ranked_list.articles if ranked_list else []
+                
+                # Post-process: ensure proper ranking and score distribution
+                if articles:
+                    # Sort by relevance score (descending)
+                    articles = sorted(articles, key=lambda x: x.relevance_score, reverse=True)
+                    
+                    # Re-assign ranks to ensure they're sequential
+                    for i, article in enumerate(articles, 1):
+                        article.rank = i
+                    
+                    # Log score distribution for monitoring
+                    if articles:
+                        scores = [a.relevance_score for a in articles]
+                        print(f"Score distribution: min={min(scores):.1f}, max={max(scores):.1f}, "
+                              f"avg={sum(scores)/len(scores):.1f}, range={max(scores)-min(scores):.1f}")
+                
+                return articles
                 
             except ClientError as e:
                 if e.status_code == 429:  # Rate limit error
