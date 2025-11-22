@@ -102,21 +102,24 @@ SCRAPER_REGISTRY = [
         GoogleScraper(),
         lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_google_articles),
     ),
-    (
-        "meta",
-        MetaScraper(),
-        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_meta_articles),
-    ),
-    (
-        "deepmind",
-        DeepMindScraper(),
-        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_deepmind_articles),
-    ),
-    (
-        "mistral",
-        MistralScraper(),
-        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_mistral_articles),
-    ),
+    # Meta AI - RSS feed not available (404)
+    # (
+    #     "meta",
+    #     MetaScraper(),
+    #     lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_meta_articles),
+    # ),
+    # DeepMind - Integrated into Google scraper above (no separate RSS feed)
+    # (
+    #     "deepmind",
+    #     DeepMindScraper(),
+    #     lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_deepmind_articles),
+    # ),
+    # Mistral AI - RSS feed not available (404)
+    # (
+    #     "mistral",
+    #     MistralScraper(),
+    #     lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_mistral_articles),
+    # ),
     (
         "huggingface",
         HuggingFaceScraper(),
@@ -168,10 +171,7 @@ if __name__ == "__main__":
     print(f"YouTube videos: {len(results['youtube'])}")
     print(f"OpenAI articles: {len(results['openai'])}")
     print(f"Anthropic articles: {len(results['anthropic'])}")
-    print(f"Google articles: {len(results['google'])}")
-    print(f"Meta articles: {len(results['meta'])}")
-    print(f"DeepMind articles: {len(results['deepmind'])}")
-    print(f"Mistral articles: {len(results['mistral'])}")
+    print(f"Google articles (incl. DeepMind): {len(results['google'])}")
     print(f"HuggingFace articles: {len(results['huggingface'])}")
     print(f"HuggingFace papers: {len(results['huggingface_papers'])}")
     print(f"TechCrunch articles: {len(results['techcrunch'])}")
