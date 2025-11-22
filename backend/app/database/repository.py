@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from .models import (
     YouTubeVideo, OpenAIArticle, AnthropicArticle, GoogleArticle, Digest, Email,
-    MetaArticle, DeepMindArticle, MistralArticle, HuggingFaceArticle, 
+    MetaArticle, MistralArticle, HuggingFaceArticle, 
     HuggingFacePaper, TechCrunchArticle, MITTRArticle, VentureBeatArticle
 )
 from .connection import get_session
@@ -281,23 +281,7 @@ class Repository:
                     "published_at": article.published_at
                 })
         
-        # DeepMind articles
-        deepmind_articles = self.session.query(DeepMindArticle).filter(
-            DeepMindArticle.markdown.isnot(None)
-        ).all()
-        for article in deepmind_articles:
-            key = f"deepmind:{article.guid}"
-            if key not in seen_ids:
-                articles.append({
-                    "type": "deepmind",
-                    "id": article.guid,
-                    "title": article.title,
-                    "url": article.url,
-                    "content": article.markdown or article.description or "",
-                    "published_at": article.published_at
-                })
-        
-        # Mistral articles
+# Mistral articles
         mistral_articles = self.session.query(MistralArticle).filter(
             MistralArticle.markdown.isnot(None)
         ).all()
@@ -520,40 +504,7 @@ class Repository:
             return True
         return False
 
-    # DeepMind Articles
-    def bulk_create_deepmind_articles(self, articles: List[dict]) -> int:
-        new_articles = []
-        for a in articles:
-            existing = self.session.query(DeepMindArticle).filter_by(guid=a["guid"]).first()
-            if not existing:
-                new_articles.append(DeepMindArticle(
-                    guid=a["guid"],
-                    title=a["title"],
-                    url=a["url"],
-                    published_at=a["published_at"],
-                    description=a.get("description", ""),
-                    category=a.get("category")
-                ))
-        if new_articles:
-            self.session.add_all(new_articles)
-            self.session.commit()
-        return len(new_articles)
-    
-    def get_deepmind_articles_without_markdown(self, limit: Optional[int] = None) -> List[DeepMindArticle]:
-        query = self.session.query(DeepMindArticle).filter(DeepMindArticle.markdown.is_(None))
-        if limit:
-            query = query.limit(limit)
-        return query.all()
-    
-    def update_deepmind_article_markdown(self, guid: str, markdown: str) -> bool:
-        article = self.session.query(DeepMindArticle).filter_by(guid=guid).first()
-        if article:
-            article.markdown = markdown
-            self.session.commit()
-            return True
-        return False
-
-    # Mistral Articles
+# Mistral Articles
     def bulk_create_mistral_articles(self, articles: List[dict]) -> int:
         new_articles = []
         for a in articles:

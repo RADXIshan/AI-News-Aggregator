@@ -20,6 +20,24 @@ An intelligent, automated news aggregation system that scrapes, processes, and c
 ![Email Confirmation](frontend/src/assets/mail.png)
 *Instant email confirmation sent to new subscribers*
 
+## 📰 Content Sources
+
+The aggregator scrapes from **9 diverse AI news sources**:
+
+| Source | Type | Content |
+|--------|------|---------|
+| **YouTube** | Video | AI channels with transcript extraction |
+| **OpenAI Blog** | RSS | Official OpenAI news and updates |
+| **Anthropic** | RSS (3 feeds) | News, Research, Engineering |
+| **Google AI + DeepMind** | RSS | Combined Google and DeepMind content |
+| **HuggingFace Blog** | RSS | ML/AI tutorials and announcements |
+| **HuggingFace Papers** | Web Scraping | Trending research papers |
+| **TechCrunch AI** | RSS | AI industry news and startups |
+| **MIT Technology Review** | RSS | In-depth AI analysis |
+| **VentureBeat AI** | RSS | AI business and enterprise news |
+
+---
+
 ## ✨ Features
 
 ### Web Subscription System
@@ -35,11 +53,16 @@ An intelligent, automated news aggregation system that scrapes, processes, and c
 - Subscriber count tracking
 - Production-ready with Uvicorn
 
-### Multi-Source Aggregation
-- YouTube channels (with transcript extraction)
-- OpenAI blog (RSS feed)
-- Anthropic blog (RSS feed with full markdown extraction)
-- Google AI blog (RSS feed with full markdown extraction)
+### Multi-Source Aggregation (9 Sources)
+- **YouTube channels** - AI videos with transcript extraction
+- **OpenAI Blog** - Official OpenAI news and updates (RSS)
+- **Anthropic** - 3 feeds: News, Research, Engineering (RSS with markdown)
+- **Google AI + DeepMind** - Combined Google and DeepMind content (RSS with markdown)
+- **HuggingFace Blog** - ML/AI tutorials and announcements (RSS with markdown)
+- **HuggingFace Papers** - Trending research papers (web scraping)
+- **TechCrunch AI** - AI industry news and startups (RSS with markdown)
+- **MIT Technology Review** - In-depth AI analysis (RSS with markdown)
+- **VentureBeat AI** - AI business and enterprise news (RSS with markdown)
 
 ### AI-Powered Processing
 - Intelligent content summarization using Google Gemini
@@ -380,11 +403,16 @@ ai-news-aggregator/
 │   │   ├── repository.py       # Data access layer
 │   │   ├── connection.py       # Database connection
 │   │   └── init_db.py          # Database initialization
-│   ├── scrapers/           # Content scrapers
+│   ├── scrapers/           # Content scrapers (9 sources)
 │   │   ├── youtube.py          # YouTube channel scraper
 │   │   ├── openai.py           # OpenAI blog scraper
-│   │   ├── anthropic.py        # Anthropic blog scraper
-│   │   └── google.py           # Google AI blog scraper
+│   │   ├── anthropic.py        # Anthropic blog scraper (3 feeds)
+│   │   ├── google.py           # Google AI + DeepMind scraper
+│   │   ├── huggingface.py      # HuggingFace blog scraper
+│   │   ├── huggingface_papers.py # HuggingFace papers scraper
+│   │   ├── techcrunch.py       # TechCrunch AI scraper
+│   │   ├── mittr.py            # MIT Technology Review scraper
+│   │   └── venturebeat.py      # VentureBeat AI scraper
 │   ├── services/           # Business logic
 │   │   ├── email_service.py    # Email service (Resend)
 │   │   └── process_*.py        # Content processors
@@ -418,8 +446,10 @@ emails
 ├── is_active
 └── created_at
 
--- Content Tables
-youtube_videos, openai_articles, anthropic_articles, google_articles
+-- Content Tables (9 sources)
+youtube_videos, openai_articles, anthropic_articles, google_articles,
+huggingface_articles, huggingface_papers, techcrunch_articles,
+mittr_articles, venturebeat_articles
 ├── id/guid (PK)
 ├── title
 ├── url
@@ -831,31 +861,41 @@ python -m app.database.init_db
 Starting Daily AI News Aggregator Pipeline
 ============================================================
 
-[1/6] Scraping articles from sources...
-✓ Scraped 5 YouTube videos, 3 OpenAI articles, 2 Anthropic articles, 4 Google articles
+[1/9] Scraping articles from sources...
+✓ Scraped 28 total articles from all sources
 
-[2/6] Processing Anthropic markdown...
+[2/9] Processing Anthropic markdown...
 ✓ Processed 2 Anthropic articles (0 failed)
 
-[3/6] Processing Google markdown...
+[3/9] Processing Google markdown (includes DeepMind)...
 ✓ Processed 4 Google articles (0 failed)
 
-[4/6] Processing YouTube transcripts...
+[4/9] Processing HuggingFace markdown...
+✓ Processed 0 HuggingFace articles (0 failed)
+
+[5/9] Processing TechCrunch markdown...
+✓ Processed 4 TechCrunch articles (0 failed)
+
+[6/9] Processing MIT TR markdown...
+✓ Processed 0 MIT TR articles (0 failed)
+
+[7/9] Processing VentureBeat markdown...
+✓ Processed 1 VentureBeat articles (0 failed)
+
+[8/9] Processing YouTube transcripts...
 ✓ Processed 5 transcripts (0 unavailable)
 
-[5/6] Creating digests for articles...
-✓ Created 14 digests (0 failed out of 14 total)
-
-[6/6] Generating and sending email digest...
+[9/9] Creating digests and sending email...
+✓ Created 20 digests (0 failed out of 20 total)
 ✓ Email sent successfully with 10 articles
 
 ============================================================
 Pipeline Summary
 ============================================================
 Duration: 45.3 seconds
-Scraped: {'youtube': 5, 'openai': 3, 'anthropic': 2, 'google': 4}
-Processed: 14 articles
-Digests: 14 created
+Scraped: 28 articles from 9 sources
+Processed: 28 articles
+Digests: 20 created
 Email: Sent to 5 subscribers
 ============================================================
 ```
@@ -927,6 +967,24 @@ For issues or questions:
 - Verify environment variables are set correctly
 - Test database connection
 - Ensure API keys are valid
+
+---
+
+---
+
+## 📊 Content Sources Summary
+
+**9 Active Sources:**
+- 8 RSS feeds (fast, reliable)
+- 1 web scraper (HuggingFace Papers)
+- Covers: Company blogs, research, news outlets, video content
+- DeepMind content integrated via Google AI Blog
+
+**Performance:**
+- Scraping: 5-10 seconds for all sources
+- No JavaScript rendering needed
+- Low maintenance overhead
+- Excellent content diversity
 
 ---
 

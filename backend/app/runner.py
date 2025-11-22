@@ -6,7 +6,6 @@ from .scrapers.openai import OpenAIScraper
 from .scrapers.anthropic import AnthropicScraper
 from .scrapers.google import GoogleScraper
 from .scrapers.meta import MetaScraper
-from .scrapers.deepmind import DeepMindScraper
 from .scrapers.mistral import MistralScraper
 from .scrapers.huggingface import HuggingFaceScraper
 from .scrapers.huggingface_papers import HuggingFacePapersScraper
