@@ -5,6 +5,14 @@ from .scrapers.youtube import YouTubeScraper, ChannelVideo
 from .scrapers.openai import OpenAIScraper
 from .scrapers.anthropic import AnthropicScraper
 from .scrapers.google import GoogleScraper
+from .scrapers.meta import MetaScraper
+from .scrapers.deepmind import DeepMindScraper
+from .scrapers.mistral import MistralScraper
+from .scrapers.huggingface import HuggingFaceScraper
+from .scrapers.huggingface_papers import HuggingFacePapersScraper
+from .scrapers.techcrunch import TechCrunchScraper
+from .scrapers.mittr import MITTRScraper
+from .scrapers.venturebeat import VentureBeatScraper
 from .database.repository import Repository
 
 logger = logging.getLogger(__name__)
@@ -57,6 +65,26 @@ def _save_rss_articles(
     return articles
 
 
+def _save_huggingface_papers(
+    scraper: HuggingFacePapersScraper, repo: Repository, hours: int
+) -> List[Any]:
+    papers = scraper.get_papers(hours=hours)
+    if papers:
+        paper_dicts = [
+            {
+                "guid": p.guid,
+                "title": p.title,
+                "url": p.url,
+                "published_at": p.published_at,
+                "description": p.description,
+                "upvotes": p.upvotes,
+            }
+            for p in papers
+        ]
+        repo.bulk_create_huggingface_papers(paper_dicts)
+    return papers
+
+
 SCRAPER_REGISTRY = [
     ("youtube", YouTubeScraper(), _save_youtube_videos),
     (
@@ -73,6 +101,46 @@ SCRAPER_REGISTRY = [
         "google",
         GoogleScraper(),
         lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_google_articles),
+    ),
+    (
+        "meta",
+        MetaScraper(),
+        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_meta_articles),
+    ),
+    (
+        "deepmind",
+        DeepMindScraper(),
+        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_deepmind_articles),
+    ),
+    (
+        "mistral",
+        MistralScraper(),
+        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_mistral_articles),
+    ),
+    (
+        "huggingface",
+        HuggingFaceScraper(),
+        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_huggingface_articles),
+    ),
+    (
+        "huggingface_papers",
+        HuggingFacePapersScraper(),
+        _save_huggingface_papers,
+    ),
+    (
+        "techcrunch",
+        TechCrunchScraper(),
+        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_techcrunch_articles),
+    ),
+    (
+        "mittr",
+        MITTRScraper(),
+        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_mittr_articles),
+    ),
+    (
+        "venturebeat",
+        VentureBeatScraper(),
+        lambda s, r, h: _save_rss_articles(s, r, h, r.bulk_create_venturebeat_articles),
     ),
 ]
 
@@ -101,3 +169,11 @@ if __name__ == "__main__":
     print(f"OpenAI articles: {len(results['openai'])}")
     print(f"Anthropic articles: {len(results['anthropic'])}")
     print(f"Google articles: {len(results['google'])}")
+    print(f"Meta articles: {len(results['meta'])}")
+    print(f"DeepMind articles: {len(results['deepmind'])}")
+    print(f"Mistral articles: {len(results['mistral'])}")
+    print(f"HuggingFace articles: {len(results['huggingface'])}")
+    print(f"HuggingFace papers: {len(results['huggingface_papers'])}")
+    print(f"TechCrunch articles: {len(results['techcrunch'])}")
+    print(f"MIT TR articles: {len(results['mittr'])}")
+    print(f"VentureBeat articles: {len(results['venturebeat'])}")

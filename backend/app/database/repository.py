@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
-from .models import YouTubeVideo, OpenAIArticle, AnthropicArticle, GoogleArticle, Digest, Email
+from .models import (
+    YouTubeVideo, OpenAIArticle, AnthropicArticle, GoogleArticle, Digest, Email,
+    MetaArticle, DeepMindArticle, MistralArticle, HuggingFaceArticle, 
+    HuggingFacePaper, TechCrunchArticle, MITTRArticle, VentureBeatArticle
+)
 from .connection import get_session
 import uuid
 
@@ -261,6 +265,132 @@ class Repository:
                     "published_at": article.published_at
                 })
         
+        # Meta articles
+        meta_articles = self.session.query(MetaArticle).filter(
+            MetaArticle.markdown.isnot(None)
+        ).all()
+        for article in meta_articles:
+            key = f"meta:{article.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "meta",
+                    "id": article.guid,
+                    "title": article.title,
+                    "url": article.url,
+                    "content": article.markdown or article.description or "",
+                    "published_at": article.published_at
+                })
+        
+        # DeepMind articles
+        deepmind_articles = self.session.query(DeepMindArticle).filter(
+            DeepMindArticle.markdown.isnot(None)
+        ).all()
+        for article in deepmind_articles:
+            key = f"deepmind:{article.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "deepmind",
+                    "id": article.guid,
+                    "title": article.title,
+                    "url": article.url,
+                    "content": article.markdown or article.description or "",
+                    "published_at": article.published_at
+                })
+        
+        # Mistral articles
+        mistral_articles = self.session.query(MistralArticle).filter(
+            MistralArticle.markdown.isnot(None)
+        ).all()
+        for article in mistral_articles:
+            key = f"mistral:{article.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "mistral",
+                    "id": article.guid,
+                    "title": article.title,
+                    "url": article.url,
+                    "content": article.markdown or article.description or "",
+                    "published_at": article.published_at
+                })
+        
+        # HuggingFace articles
+        huggingface_articles = self.session.query(HuggingFaceArticle).filter(
+            HuggingFaceArticle.markdown.isnot(None)
+        ).all()
+        for article in huggingface_articles:
+            key = f"huggingface:{article.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "huggingface",
+                    "id": article.guid,
+                    "title": article.title,
+                    "url": article.url,
+                    "content": article.markdown or article.description or "",
+                    "published_at": article.published_at
+                })
+        
+        # HuggingFace papers
+        huggingface_papers = self.session.query(HuggingFacePaper).all()
+        for paper in huggingface_papers:
+            key = f"huggingface_papers:{paper.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "huggingface_papers",
+                    "id": paper.guid,
+                    "title": paper.title,
+                    "url": paper.url,
+                    "content": paper.description or "",
+                    "published_at": paper.published_at
+                })
+        
+        # TechCrunch articles
+        techcrunch_articles = self.session.query(TechCrunchArticle).filter(
+            TechCrunchArticle.markdown.isnot(None)
+        ).all()
+        for article in techcrunch_articles:
+            key = f"techcrunch:{article.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "techcrunch",
+                    "id": article.guid,
+                    "title": article.title,
+                    "url": article.url,
+                    "content": article.markdown or article.description or "",
+                    "published_at": article.published_at
+                })
+        
+        # MITTR articles
+        mittr_articles = self.session.query(MITTRArticle).filter(
+            MITTRArticle.markdown.isnot(None)
+        ).all()
+        for article in mittr_articles:
+            key = f"mittr:{article.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "mittr",
+                    "id": article.guid,
+                    "title": article.title,
+                    "url": article.url,
+                    "content": article.markdown or article.description or "",
+                    "published_at": article.published_at
+                })
+        
+        # VentureBeat articles
+        venturebeat_articles = self.session.query(VentureBeatArticle).filter(
+            VentureBeatArticle.markdown.isnot(None)
+        ).all()
+        for article in venturebeat_articles:
+            key = f"venturebeat:{article.guid}"
+            if key not in seen_ids:
+                articles.append({
+                    "type": "venturebeat",
+                    "id": article.guid,
+                    "title": article.title,
+                    "url": article.url,
+                    "content": article.markdown or article.description or "",
+                    "published_at": article.published_at
+                })
+        
         if limit:
             articles = articles[:limit]
         
@@ -353,6 +483,256 @@ class Repository:
         email_record = self.session.query(Email).filter_by(email=email).first()
         if email_record:
             self.session.delete(email_record)
+            self.session.commit()
+            return True
+        return False
+
+    # Meta Articles
+    def bulk_create_meta_articles(self, articles: List[dict]) -> int:
+        new_articles = []
+        for a in articles:
+            existing = self.session.query(MetaArticle).filter_by(guid=a["guid"]).first()
+            if not existing:
+                new_articles.append(MetaArticle(
+                    guid=a["guid"],
+                    title=a["title"],
+                    url=a["url"],
+                    published_at=a["published_at"],
+                    description=a.get("description", ""),
+                    category=a.get("category")
+                ))
+        if new_articles:
+            self.session.add_all(new_articles)
+            self.session.commit()
+        return len(new_articles)
+    
+    def get_meta_articles_without_markdown(self, limit: Optional[int] = None) -> List[MetaArticle]:
+        query = self.session.query(MetaArticle).filter(MetaArticle.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_meta_article_markdown(self, guid: str, markdown: str) -> bool:
+        article = self.session.query(MetaArticle).filter_by(guid=guid).first()
+        if article:
+            article.markdown = markdown
+            self.session.commit()
+            return True
+        return False
+
+    # DeepMind Articles
+    def bulk_create_deepmind_articles(self, articles: List[dict]) -> int:
+        new_articles = []
+        for a in articles:
+            existing = self.session.query(DeepMindArticle).filter_by(guid=a["guid"]).first()
+            if not existing:
+                new_articles.append(DeepMindArticle(
+                    guid=a["guid"],
+                    title=a["title"],
+                    url=a["url"],
+                    published_at=a["published_at"],
+                    description=a.get("description", ""),
+                    category=a.get("category")
+                ))
+        if new_articles:
+            self.session.add_all(new_articles)
+            self.session.commit()
+        return len(new_articles)
+    
+    def get_deepmind_articles_without_markdown(self, limit: Optional[int] = None) -> List[DeepMindArticle]:
+        query = self.session.query(DeepMindArticle).filter(DeepMindArticle.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_deepmind_article_markdown(self, guid: str, markdown: str) -> bool:
+        article = self.session.query(DeepMindArticle).filter_by(guid=guid).first()
+        if article:
+            article.markdown = markdown
+            self.session.commit()
+            return True
+        return False
+
+    # Mistral Articles
+    def bulk_create_mistral_articles(self, articles: List[dict]) -> int:
+        new_articles = []
+        for a in articles:
+            existing = self.session.query(MistralArticle).filter_by(guid=a["guid"]).first()
+            if not existing:
+                new_articles.append(MistralArticle(
+                    guid=a["guid"],
+                    title=a["title"],
+                    url=a["url"],
+                    published_at=a["published_at"],
+                    description=a.get("description", ""),
+                    category=a.get("category")
+                ))
+        if new_articles:
+            self.session.add_all(new_articles)
+            self.session.commit()
+        return len(new_articles)
+    
+    def get_mistral_articles_without_markdown(self, limit: Optional[int] = None) -> List[MistralArticle]:
+        query = self.session.query(MistralArticle).filter(MistralArticle.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_mistral_article_markdown(self, guid: str, markdown: str) -> bool:
+        article = self.session.query(MistralArticle).filter_by(guid=guid).first()
+        if article:
+            article.markdown = markdown
+            self.session.commit()
+            return True
+        return False
+
+    # HuggingFace Articles
+    def bulk_create_huggingface_articles(self, articles: List[dict]) -> int:
+        new_articles = []
+        for a in articles:
+            existing = self.session.query(HuggingFaceArticle).filter_by(guid=a["guid"]).first()
+            if not existing:
+                new_articles.append(HuggingFaceArticle(
+                    guid=a["guid"],
+                    title=a["title"],
+                    url=a["url"],
+                    published_at=a["published_at"],
+                    description=a.get("description", ""),
+                    category=a.get("category")
+                ))
+        if new_articles:
+            self.session.add_all(new_articles)
+            self.session.commit()
+        return len(new_articles)
+    
+    def get_huggingface_articles_without_markdown(self, limit: Optional[int] = None) -> List[HuggingFaceArticle]:
+        query = self.session.query(HuggingFaceArticle).filter(HuggingFaceArticle.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_huggingface_article_markdown(self, guid: str, markdown: str) -> bool:
+        article = self.session.query(HuggingFaceArticle).filter_by(guid=guid).first()
+        if article:
+            article.markdown = markdown
+            self.session.commit()
+            return True
+        return False
+
+    # HuggingFace Papers
+    def bulk_create_huggingface_papers(self, papers: List[dict]) -> int:
+        new_papers = []
+        for p in papers:
+            existing = self.session.query(HuggingFacePaper).filter_by(guid=p["guid"]).first()
+            if not existing:
+                new_papers.append(HuggingFacePaper(
+                    guid=p["guid"],
+                    title=p["title"],
+                    url=p["url"],
+                    published_at=p["published_at"],
+                    description=p.get("description", ""),
+                    upvotes=str(p.get("upvotes", ""))
+                ))
+        if new_papers:
+            self.session.add_all(new_papers)
+            self.session.commit()
+        return len(new_papers)
+
+    # TechCrunch Articles
+    def bulk_create_techcrunch_articles(self, articles: List[dict]) -> int:
+        new_articles = []
+        for a in articles:
+            existing = self.session.query(TechCrunchArticle).filter_by(guid=a["guid"]).first()
+            if not existing:
+                new_articles.append(TechCrunchArticle(
+                    guid=a["guid"],
+                    title=a["title"],
+                    url=a["url"],
+                    published_at=a["published_at"],
+                    description=a.get("description", ""),
+                    category=a.get("category")
+                ))
+        if new_articles:
+            self.session.add_all(new_articles)
+            self.session.commit()
+        return len(new_articles)
+    
+    def get_techcrunch_articles_without_markdown(self, limit: Optional[int] = None) -> List[TechCrunchArticle]:
+        query = self.session.query(TechCrunchArticle).filter(TechCrunchArticle.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_techcrunch_article_markdown(self, guid: str, markdown: str) -> bool:
+        article = self.session.query(TechCrunchArticle).filter_by(guid=guid).first()
+        if article:
+            article.markdown = markdown
+            self.session.commit()
+            return True
+        return False
+
+    # MITTR Articles
+    def bulk_create_mittr_articles(self, articles: List[dict]) -> int:
+        new_articles = []
+        for a in articles:
+            existing = self.session.query(MITTRArticle).filter_by(guid=a["guid"]).first()
+            if not existing:
+                new_articles.append(MITTRArticle(
+                    guid=a["guid"],
+                    title=a["title"],
+                    url=a["url"],
+                    published_at=a["published_at"],
+                    description=a.get("description", ""),
+                    category=a.get("category")
+                ))
+        if new_articles:
+            self.session.add_all(new_articles)
+            self.session.commit()
+        return len(new_articles)
+    
+    def get_mittr_articles_without_markdown(self, limit: Optional[int] = None) -> List[MITTRArticle]:
+        query = self.session.query(MITTRArticle).filter(MITTRArticle.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_mittr_article_markdown(self, guid: str, markdown: str) -> bool:
+        article = self.session.query(MITTRArticle).filter_by(guid=guid).first()
+        if article:
+            article.markdown = markdown
+            self.session.commit()
+            return True
+        return False
+
+    # VentureBeat Articles
+    def bulk_create_venturebeat_articles(self, articles: List[dict]) -> int:
+        new_articles = []
+        for a in articles:
+            existing = self.session.query(VentureBeatArticle).filter_by(guid=a["guid"]).first()
+            if not existing:
+                new_articles.append(VentureBeatArticle(
+                    guid=a["guid"],
+                    title=a["title"],
+                    url=a["url"],
+                    published_at=a["published_at"],
+                    description=a.get("description", ""),
+                    category=a.get("category")
+                ))
+        if new_articles:
+            self.session.add_all(new_articles)
+            self.session.commit()
+        return len(new_articles)
+    
+    def get_venturebeat_articles_without_markdown(self, limit: Optional[int] = None) -> List[VentureBeatArticle]:
+        query = self.session.query(VentureBeatArticle).filter(VentureBeatArticle.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_venturebeat_article_markdown(self, guid: str, markdown: str) -> bool:
+        article = self.session.query(VentureBeatArticle).filter_by(guid=guid).first()
+        if article:
+            article.markdown = markdown
             self.session.commit()
             return True
         return False

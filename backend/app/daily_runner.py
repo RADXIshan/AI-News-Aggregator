@@ -8,6 +8,13 @@ from app.runner import run_scrapers
 from app.services.process_anthropic import process_anthropic_markdown
 from app.services.process_google import process_google_markdown
 from app.services.process_youtube import process_youtube_transcripts
+from app.services.process_meta import process_meta_markdown
+from app.services.process_deepmind import process_deepmind_markdown
+from app.services.process_mistral import process_mistral_markdown
+from app.services.process_huggingface import process_huggingface_markdown
+from app.services.process_techcrunch import process_techcrunch_markdown
+from app.services.process_mittr import process_mittr_markdown
+from app.services.process_venturebeat import process_venturebeat_markdown
 from app.services.process_digest import process_digests
 from app.services.process_email import send_digest_email
 
@@ -35,44 +42,92 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
     }
     
     try:
-        logger.info("\n[1/6] Scraping articles from sources...")
+        logger.info("\n[1/13] Scraping articles from sources...")
         scraping_results = run_scrapers(hours=hours)
         results["scraping"] = {
             "youtube": len(scraping_results.get("youtube", [])),
             "openai": len(scraping_results.get("openai", [])),
             "anthropic": len(scraping_results.get("anthropic", [])),
-            "google": len(scraping_results.get("google", []))
+            "google": len(scraping_results.get("google", [])),
+            "meta": len(scraping_results.get("meta", [])),
+            "deepmind": len(scraping_results.get("deepmind", [])),
+            "mistral": len(scraping_results.get("mistral", [])),
+            "huggingface": len(scraping_results.get("huggingface", [])),
+            "huggingface_papers": len(scraping_results.get("huggingface_papers", [])),
+            "techcrunch": len(scraping_results.get("techcrunch", [])),
+            "mittr": len(scraping_results.get("mittr", [])),
+            "venturebeat": len(scraping_results.get("venturebeat", []))
         }
-        logger.info(f"✓ Scraped {results['scraping']['youtube']} YouTube videos, "
-                    f"{results['scraping']['openai']} OpenAI articles, "
-                    f"{results['scraping']['anthropic']} Anthropic articles, "
-                    f"{results['scraping']['google']} Google articles")
+        total_scraped = sum(results["scraping"].values())
+        logger.info(f"✓ Scraped {total_scraped} total articles from all sources")
         
-        logger.info("\n[2/6] Processing Anthropic markdown...")
+        logger.info("\n[2/13] Processing Anthropic markdown...")
         anthropic_result = process_anthropic_markdown()
         results["processing"]["anthropic"] = anthropic_result
         logger.info(f"✓ Processed {anthropic_result['processed']} Anthropic articles "
                     f"({anthropic_result['failed']} failed)")
         
-        logger.info("\n[3/6] Processing Google markdown...")
+        logger.info("\n[3/13] Processing Google markdown...")
         google_result = process_google_markdown()
         results["processing"]["google"] = google_result
         logger.info(f"✓ Processed {google_result['processed']} Google articles "
                     f"({google_result['failed']} failed)")
         
-        logger.info("\n[4/6] Processing YouTube transcripts...")
+        logger.info("\n[4/13] Processing Meta markdown...")
+        meta_result = process_meta_markdown()
+        results["processing"]["meta"] = meta_result
+        logger.info(f"✓ Processed {meta_result['processed']} Meta articles "
+                    f"({meta_result['failed']} failed)")
+        
+        logger.info("\n[5/13] Processing DeepMind markdown...")
+        deepmind_result = process_deepmind_markdown()
+        results["processing"]["deepmind"] = deepmind_result
+        logger.info(f"✓ Processed {deepmind_result['processed']} DeepMind articles "
+                    f"({deepmind_result['failed']} failed)")
+        
+        logger.info("\n[6/13] Processing Mistral markdown...")
+        mistral_result = process_mistral_markdown()
+        results["processing"]["mistral"] = mistral_result
+        logger.info(f"✓ Processed {mistral_result['processed']} Mistral articles "
+                    f"({mistral_result['failed']} failed)")
+        
+        logger.info("\n[7/13] Processing HuggingFace markdown...")
+        huggingface_result = process_huggingface_markdown()
+        results["processing"]["huggingface"] = huggingface_result
+        logger.info(f"✓ Processed {huggingface_result['processed']} HuggingFace articles "
+                    f"({huggingface_result['failed']} failed)")
+        
+        logger.info("\n[8/13] Processing TechCrunch markdown...")
+        techcrunch_result = process_techcrunch_markdown()
+        results["processing"]["techcrunch"] = techcrunch_result
+        logger.info(f"✓ Processed {techcrunch_result['processed']} TechCrunch articles "
+                    f"({techcrunch_result['failed']} failed)")
+        
+        logger.info("\n[9/13] Processing MIT TR markdown...")
+        mittr_result = process_mittr_markdown()
+        results["processing"]["mittr"] = mittr_result
+        logger.info(f"✓ Processed {mittr_result['processed']} MIT TR articles "
+                    f"({mittr_result['failed']} failed)")
+        
+        logger.info("\n[10/13] Processing VentureBeat markdown...")
+        venturebeat_result = process_venturebeat_markdown()
+        results["processing"]["venturebeat"] = venturebeat_result
+        logger.info(f"✓ Processed {venturebeat_result['processed']} VentureBeat articles "
+                    f"({venturebeat_result['failed']} failed)")
+        
+        logger.info("\n[11/13] Processing YouTube transcripts...")
         youtube_result = process_youtube_transcripts()
         results["processing"]["youtube"] = youtube_result
         logger.info(f"✓ Processed {youtube_result['processed']} transcripts "
                     f"({youtube_result['unavailable']} unavailable)")
         
-        logger.info("\n[5/6] Creating digests for articles...")
+        logger.info("\n[12/13] Creating digests for articles...")
         digest_result = process_digests()
         results["digests"] = digest_result
         logger.info(f"✓ Created {digest_result['processed']} digests "
                     f"({digest_result['failed']} failed out of {digest_result['total']} total)")
         
-        logger.info("\n[6/6] Generating and sending email digest...")
+        logger.info("\n[13/13] Generating and sending email digest...")
         email_result = send_digest_email(hours=hours, top_n=top_n)
         results["email"] = email_result
         
