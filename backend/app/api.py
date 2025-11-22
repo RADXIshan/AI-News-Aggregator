@@ -19,7 +19,7 @@ CLIENT_URL = os.getenv("CLIENT_URL", "http://localhost:5173")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai-news-aggregator-digest.vercel.app", CLIENT_URL, "http://localhost:5173", "https://ai-digest-cron.trickster10ishan.workers.dev"],  # Allow all origins for now
+    allow_origins=["https://ai-news-aggregator-digest.vercel.app", CLIENT_URL, "http://localhost:5173", "https://ai-digest-cron.trickster10ishan.workers.dev"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -151,7 +151,7 @@ class UnsubscribeResponse(BaseModel):
 async def unsubscribe(request: UnsubscribeRequest):
     """
     Unsubscribe a user from the daily AI news digest.
-    Completely removes the email from the database.
+    Completely removes the email from the database and sends a confirmation email.
     """
     from app.database.connection import get_session
     
@@ -168,14 +168,28 @@ async def unsubscribe(request: UnsubscribeRequest):
                 email=request.email
             )
         
+        # Store name before deletion
+        user_name = existing.name or "there"
+        
         # Delete the email from database
         deleted = repo.delete_email(request.email)
         
         if deleted:
             logger.info(f"Deleted email from database: {request.email}")
+            
+            # Send unsubscribe confirmation email
+            email_service = EmailService()
+            email_sent = email_service.send_unsubscribe_confirmation_email(
+                to_email=request.email,
+                name=user_name
+            )
+            
+            if not email_sent:
+                logger.warning(f"Unsubscribe confirmation email failed to send to {request.email}")
+            
             return UnsubscribeResponse(
                 success=True,
-                message="Successfully unsubscribed. We're sorry to see you go!",
+                message="Successfully unsubscribed. Check your email for confirmation.",
                 email=request.email
             )
         else:

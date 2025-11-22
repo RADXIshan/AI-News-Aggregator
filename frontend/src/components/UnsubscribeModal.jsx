@@ -27,7 +27,7 @@ const UnsubscribeModal = ({ isOpen, onClose }) => {
       const response = await unsubscribeFromDigest(email)
 
       if (response.success) {
-        toast.success('Subscription deleted successfully')
+        toast.success('Successfully unsubscribed! Check your email for confirmation.')
         setEmail('')
         onClose()
       } else {

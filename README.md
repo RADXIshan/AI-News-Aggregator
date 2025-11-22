@@ -29,7 +29,7 @@ The aggregator scrapes from **9 diverse AI news sources**:
 | **YouTube** | Video | AI channels with transcript extraction |
 | **OpenAI Blog** | RSS | Official OpenAI news and updates |
 | **Anthropic** | RSS (3 feeds) | News, Research, Engineering |
-| **Google AI + DeepMind** | RSS | Combined Google and DeepMind content |
+| **Google AI** | RSS | Google AI blog content |
 | **HuggingFace Blog** | RSS | ML/AI tutorials and announcements |
 | **HuggingFace Papers** | Web Scraping | Trending research papers |
 | **TechCrunch AI** | RSS | AI industry news and startups |
@@ -57,7 +57,7 @@ The aggregator scrapes from **9 diverse AI news sources**:
 - **YouTube channels** - AI videos with transcript extraction
 - **OpenAI Blog** - Official OpenAI news and updates (RSS)
 - **Anthropic** - 3 feeds: News, Research, Engineering (RSS with markdown)
-- **Google AI + DeepMind** - Combined Google and DeepMind content (RSS with markdown)
+- **Google AI** - Google AI blog content (RSS with markdown)
 - **HuggingFace Blog** - ML/AI tutorials and announcements (RSS with markdown)
 - **HuggingFace Papers** - Trending research papers (web scraping)
 - **TechCrunch AI** - AI industry news and startups (RSS with markdown)
@@ -407,7 +407,7 @@ ai-news-aggregator/
 │   │   ├── youtube.py          # YouTube channel scraper
 │   │   ├── openai.py           # OpenAI blog scraper
 │   │   ├── anthropic.py        # Anthropic blog scraper (3 feeds)
-│   │   ├── google.py           # Google AI + DeepMind scraper
+│   │   ├── google.py           # Google AI blog scraper
 │   │   ├── huggingface.py      # HuggingFace blog scraper
 │   │   ├── huggingface_papers.py # HuggingFace papers scraper
 │   │   ├── techcrunch.py       # TechCrunch AI scraper
@@ -867,7 +867,7 @@ Starting Daily AI News Aggregator Pipeline
 [2/9] Processing Anthropic markdown...
 ✓ Processed 2 Anthropic articles (0 failed)
 
-[3/9] Processing Google markdown (includes DeepMind)...
+[3/9] Processing Google markdown...
 ✓ Processed 4 Google articles (0 failed)
 
 [4/9] Processing HuggingFace markdown...
@@ -978,7 +978,6 @@ For issues or questions:
 - 8 RSS feeds (fast, reliable)
 - 1 web scraper (HuggingFace Papers)
 - Covers: Company blogs, research, news outlets, video content
-- DeepMind content integrated via Google AI Blog
 
 **Performance:**
 - Scraping: 5-10 seconds for all sources

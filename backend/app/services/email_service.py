@@ -136,6 +136,124 @@ class EmailService:
             logger.error(f"Failed to send confirmation email to {to_email}: {str(e)}")
             return False
     
+    def send_unsubscribe_confirmation_email(self, to_email: str, name: str = "there") -> bool:
+        """
+        Send a confirmation email when a user unsubscribes using Gmail SMTP
+        """
+        if not self.my_email or not self.app_password:
+            logger.error("Cannot send email: MY_EMAIL or APP_PASSWORD not configured")
+            return False
+        
+        try:
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {{
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                    }}
+                    .header {{
+                        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+                        color: white;
+                        padding: 30px;
+                        border-radius: 10px 10px 0 0;
+                        text-align: center;
+                    }}
+                    .content {{
+                        background: #f9fafb;
+                        padding: 30px;
+                        border-radius: 0 0 10px 10px;
+                    }}
+                    .button {{
+                        display: inline-block;
+                        background: #667eea;
+                        color: white;
+                        padding: 12px 30px;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        margin: 20px 0;
+                    }}
+                    .footer {{
+                        text-align: center;
+                        margin-top: 30px;
+                        color: #666;
+                        font-size: 14px;
+                    }}
+                    h1 {{
+                        margin: 0;
+                        font-size: 28px;
+                    }}
+                    .emoji {{
+                        font-size: 48px;
+                        margin-bottom: 10px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="emoji">👋</div>
+                    <h1>You've Been Unsubscribed</h1>
+                </div>
+                <div class="content">
+                    <p>Hey {name},</p>
+                    
+                    <p>We're sorry to see you go! Your email has been successfully removed from our AI News Digest mailing list.</p>
+                    
+                    <p><strong>What this means:</strong></p>
+                    <ul>
+                        <li>❌ You won't receive any more daily digests</li>
+                        <li>🗑️ Your email has been removed from our database</li>
+                        <li>✅ This change is effective immediately</li>
+                    </ul>
+                    
+                    <p>If you unsubscribed by mistake or change your mind, you can always resubscribe at any time by visiting our website.</p>
+                    
+                    <p>We'd love to hear your feedback! If you have a moment, please reply to this email and let us know why you unsubscribed. Your input helps us improve.</p>
+                    
+                    <p>Thank you for being part of our community, and we hope to see you again in the future!</p>
+                    
+                    <p>Best regards,<br>
+                    <strong>The AI News Digest Team</strong></p>
+                </div>
+                <div class="footer">
+                    <p>This is a confirmation that you've been unsubscribed from AI News Digest.</p>
+                    <p>© 2025 AI News Digest. All rights reserved.</p>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Create message
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = "You've Been Unsubscribed from AI News Digest"
+            msg['From'] = self.my_email
+            msg['To'] = to_email
+            
+            # Attach HTML content
+            html_part = MIMEText(html_content, 'html')
+            msg.attach(html_part)
+            
+            # Send via Gmail SMTP
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.my_email, self.app_password)
+                server.send_message(msg)
+            
+            logger.info(f"Unsubscribe confirmation email sent to {to_email} via Gmail SMTP")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to send unsubscribe confirmation email to {to_email}: {str(e)}")
+            return False
+    
     def send_digest_email(self, to_email: str, subject: str, html_content: str) -> bool:
         """
         Send the daily digest email using Gmail SMTP

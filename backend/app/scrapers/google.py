@@ -17,10 +17,9 @@ class GoogleArticle(BaseModel):
 
 class GoogleScraper:
     def __init__(self):
-        # Google AI blog RSS feeds (including DeepMind)
+        # Google AI blog RSS feed
         self.rss_urls = [
-            "https://blog.google/technology/ai/rss/",
-            "https://deepmind.google/blog/rss.xml"
+            "https://blog.google/technology/ai/rss/"
         ]
         self.converter = MarkdownConverter()
 

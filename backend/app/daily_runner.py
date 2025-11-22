@@ -61,7 +61,7 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
         logger.info(f"✓ Processed {anthropic_result['processed']} Anthropic articles "
                     f"({anthropic_result['failed']} failed)")
         
-        logger.info("\n[3/9] Processing Google markdown (includes DeepMind)...")
+        logger.info("\n[3/9] Processing Google markdown...")
         google_result = process_google_markdown()
         results["processing"]["google"] = google_result
         logger.info(f"✓ Processed {google_result['processed']} Google articles "
