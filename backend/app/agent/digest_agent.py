@@ -31,7 +31,7 @@ Return your response as JSON with fields: title (string), summary (string)"""
 class DigestAgent:
     def __init__(self):
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model = "gemini-2.5-flash"
+        self.model = "gemini-2.5-flash-lite"
         self.system_prompt = PROMPT
         self.last_request_time = 0
         self.min_request_interval = 6.5  # 6.5 seconds between requests (9 requests/min max)
