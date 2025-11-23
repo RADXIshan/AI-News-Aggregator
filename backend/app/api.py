@@ -171,7 +171,6 @@ async def unsubscribe(request: UnsubscribeRequest):
         # Store name before deletion
         user_name = existing.name or "there"
         
-        # Delete the email from database
         deleted = repo.delete_email(request.email)
         
         if deleted:
