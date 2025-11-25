@@ -314,7 +314,9 @@ class Repository:
                 })
         
         # HuggingFace papers
-        huggingface_papers = self.session.query(HuggingFacePaper).all()
+        huggingface_papers = self.session.query(HuggingFacePaper).filter(
+            HuggingFacePaper.markdown.isnot(None)
+        ).all()
         for paper in huggingface_papers:
             key = f"huggingface_papers:{paper.guid}"
             if key not in seen_ids:
@@ -323,7 +325,7 @@ class Repository:
                     "id": paper.guid,
                     "title": paper.title,
                     "url": paper.url,
-                    "content": paper.description or "",
+                    "content": paper.markdown or paper.description or "",
                     "published_at": paper.published_at
                 })
         
@@ -386,6 +388,14 @@ class Repository:
         if existing:
             return None
         
+        # Validate that title and summary are not empty
+        if not title or not title.strip():
+            print(f"Warning: Attempted to create digest with empty title for {digest_id}")
+            return None
+        if not summary or not summary.strip():
+            print(f"Warning: Attempted to create digest with empty summary for {digest_id}")
+            return None
+        
         if published_at:
             if published_at.tzinfo is None:
                 published_at = published_at.replace(tzinfo=timezone.utc)
@@ -412,6 +422,7 @@ class Repository:
             Digest.created_at >= cutoff_time
         ).order_by(Digest.created_at.desc()).all()
         
+        # Filter out digests with empty title or summary
         return [
             {
                 "id": d.id,
@@ -423,7 +434,22 @@ class Repository:
                 "created_at": d.created_at
             }
             for d in digests
+            if d.title and d.title.strip() and d.summary and d.summary.strip()
         ]
+    
+    def delete_empty_digests(self) -> int:
+        """Delete digests with empty title or summary"""
+        empty_digests = self.session.query(Digest).filter(
+            (Digest.title == "") | (Digest.summary == "") | 
+            (Digest.title == None) | (Digest.summary == None)
+        ).all()
+        
+        count = len(empty_digests)
+        for digest in empty_digests:
+            self.session.delete(digest)
+        
+        self.session.commit()
+        return count
 
 
     def create_email(self, email: str, name: Optional[str] = None, is_active: bool = True) -> Optional[Email]:
@@ -588,6 +614,20 @@ class Repository:
             self.session.add_all(new_papers)
             self.session.commit()
         return len(new_papers)
+
+    def get_huggingface_papers_without_markdown(self, limit: Optional[int] = None) -> List[HuggingFacePaper]:
+        query = self.session.query(HuggingFacePaper).filter(HuggingFacePaper.markdown.is_(None))
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+    
+    def update_huggingface_paper_markdown(self, guid: str, markdown: str) -> bool:
+        paper = self.session.query(HuggingFacePaper).filter_by(guid=guid).first()
+        if paper:
+            paper.markdown = markdown
+            self.session.commit()
+            return True
+        return False
 
     # TechCrunch Articles
     def bulk_create_techcrunch_articles(self, articles: List[dict]) -> int:

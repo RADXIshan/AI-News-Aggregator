@@ -37,24 +37,43 @@ def process_digests(limit: Optional[int] = None) -> dict:
             
             logger.info(f"[{idx}/{total}] Processing {article_type}: {article_title} (ID: {article_id})")
             
+            # Check if article has content
+            content = article.get("content", "")
+            if not content or not content.strip():
+                failed += 1
+                logger.warning(f"✗ Article has no content for {article_type} {article_id}")
+                continue
+            
             try:
                 digest_result = agent.generate_digest(
                     title=article["title"],
-                    content=article["content"],
+                    content=content,
                     article_type=article_type
                 )
                 
                 if digest_result:
-                    repo.create_digest(
-                        article_type=article_type,
-                        article_id=article_id,
-                        url=article["url"],
-                        title=digest_result.title,
-                        summary=digest_result.summary,
-                        published_at=article.get("published_at")
-                    )
-                    processed += 1
-                    logger.info(f"✓ Successfully created digest for {article_type} {article_id}")
+                    # Validate digest has content before creating
+                    if not digest_result.title or not digest_result.title.strip():
+                        failed += 1
+                        logger.warning(f"✗ Digest has empty title for {article_type} {article_id}")
+                    elif not digest_result.summary or not digest_result.summary.strip():
+                        failed += 1
+                        logger.warning(f"✗ Digest has empty summary for {article_type} {article_id}")
+                    else:
+                        created_digest = repo.create_digest(
+                            article_type=article_type,
+                            article_id=article_id,
+                            url=article["url"],
+                            title=digest_result.title,
+                            summary=digest_result.summary,
+                            published_at=article.get("published_at")
+                        )
+                        if created_digest:
+                            processed += 1
+                            logger.info(f"✓ Successfully created digest for {article_type} {article_id}")
+                        else:
+                            failed += 1
+                            logger.warning(f"✗ Failed to save digest for {article_type} {article_id}")
                 else:
                     failed += 1
                     logger.warning(f"✗ Failed to generate digest for {article_type} {article_id}")

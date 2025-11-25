@@ -3,6 +3,7 @@ from typing import List, Optional
 import requests
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
+from app.utils.markdown_converter import MarkdownConverter
 
 
 class HuggingFacePaper(BaseModel):
@@ -17,6 +18,7 @@ class HuggingFacePaper(BaseModel):
 class HuggingFacePapersScraper:
     def __init__(self):
         self.base_url = "https://huggingface.co/papers"
+        self.converter = MarkdownConverter()
 
     def get_papers(self, hours: int = 24) -> List[HuggingFacePaper]:
         """Scrape trending papers from Hugging Face Papers"""
@@ -76,6 +78,9 @@ class HuggingFacePapersScraper:
         except Exception as e:
             print(f"Error scraping Hugging Face papers: {e}")
             return []
+
+    def url_to_markdown(self, url: str) -> Optional[str]:
+        return self.converter.convert_url(url)
 
 
 if __name__ == "__main__":

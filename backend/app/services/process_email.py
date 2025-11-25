@@ -44,19 +44,25 @@ def generate_email_digest(hours: int = 24, top_n: int = 10) -> EmailDigestRespon
     
     logger.info(f"Generating email digest with top {top_n} articles")
     
-    article_details = [
-        RankedArticleDetail(
-            digest_id=a.digest_id,
-            rank=a.rank,
-            relevance_score=a.relevance_score,
-            reasoning=a.reasoning,
-            title=next((d["title"] for d in digests if d["id"] == a.digest_id), ""),
-            summary=next((d["summary"] for d in digests if d["id"] == a.digest_id), ""),
-            url=next((d["url"] for d in digests if d["id"] == a.digest_id), ""),
-            article_type=next((d["article_type"] for d in digests if d["id"] == a.digest_id), "")
-        )
-        for a in ranked_articles
-    ]
+    # Create article details - filter out any that don't have matching digests
+    article_details = []
+    for a in ranked_articles:
+        # Find matching digest
+        matching_digest = next((d for d in digests if d["id"] == a.digest_id), None)
+        
+        if matching_digest:
+            article_details.append(RankedArticleDetail(
+                digest_id=a.digest_id,
+                rank=a.rank,
+                relevance_score=a.relevance_score,
+                reasoning=a.reasoning,
+                title=matching_digest["title"],
+                summary=matching_digest["summary"],
+                url=matching_digest["url"],
+                article_type=matching_digest["article_type"]
+            ))
+        else:
+            logger.warning(f"No matching digest found for digest_id: {a.digest_id}")
     
     email_digest = email_agent.create_email_digest_response(
         ranked_articles=article_details,
@@ -290,20 +296,29 @@ def send_digest_email(hours: int = 24, top_n: int = 10) -> dict:
                 "error": "Failed to rank articles"
             }
         
-        # Create article details
-        article_details = [
-            RankedArticleDetail(
-                digest_id=a.digest_id,
-                rank=a.rank,
-                relevance_score=a.relevance_score,
-                reasoning=a.reasoning,
-                title=next((d["title"] for d in digests if d["id"] == a.digest_id), ""),
-                summary=next((d["summary"] for d in digests if d["id"] == a.digest_id), ""),
-                url=next((d["url"] for d in digests if d["id"] == a.digest_id), ""),
-                article_type=next((d["article_type"] for d in digests if d["id"] == a.digest_id), "")
-            )
-            for a in ranked_articles
-        ][:top_n]
+        # Create article details - filter out any that don't have matching digests
+        article_details = []
+        for a in ranked_articles:
+            # Find matching digest
+            matching_digest = next((d for d in digests if d["id"] == a.digest_id), None)
+            
+            if matching_digest:
+                article_details.append(RankedArticleDetail(
+                    digest_id=a.digest_id,
+                    rank=a.rank,
+                    relevance_score=a.relevance_score,
+                    reasoning=a.reasoning,
+                    title=matching_digest["title"],
+                    summary=matching_digest["summary"],
+                    url=matching_digest["url"],
+                    article_type=matching_digest["article_type"]
+                ))
+            else:
+                logger.warning(f"No matching digest found for digest_id: {a.digest_id}")
+            
+            # Stop once we have enough articles
+            if len(article_details) >= top_n:
+                break
         
         # Send personalized email to each subscriber
         email_service = EmailService()
