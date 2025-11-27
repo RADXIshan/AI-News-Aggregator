@@ -165,8 +165,9 @@ IMPORTANT:
 - Each article must have a UNIQUE rank (no ties)
 - Reasoning should reference specific interests and criteria
 - Consider: interest alignment, technical depth, practical value, novelty, expertise fit
+- Keep reasoning concise (1-2 sentences) and avoid line breaks or special characters
 
-Return your response as JSON:
+Return your response as valid JSON (no line breaks in strings):
 {{
   "articles": [
     {{
@@ -209,8 +210,20 @@ Return your response as JSON:
                     result = json.loads(response_text)
                 except json.JSONDecodeError as json_err:
                     print(f"JSON decode error: {json_err}")
-                    print(f"Response text: {response_text[:500]}")
-                    return []
+                    print(f"Response text: {response_text[:1000]}")
+                    
+                    # Try to fix common JSON issues
+                    # Replace control characters with spaces
+                    import re
+                    cleaned_text = re.sub(r'[\x00-\x1f\x7f-\x9f]', ' ', response_text)
+                    
+                    try:
+                        result = json.loads(cleaned_text)
+                        print("✓ Successfully parsed after cleaning control characters")
+                    except json.JSONDecodeError as second_err:
+                        print(f"Still failed after cleaning: {second_err}")
+                        print(f"Cleaned text sample: {cleaned_text[:1000]}")
+                        return []
                 
                 ranked_list = RankedDigestList(**result)
                 articles = ranked_list.articles if ranked_list else []
