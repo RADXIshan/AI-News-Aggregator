@@ -17,7 +17,6 @@ class GoogleArticle(BaseModel):
 
 class GoogleScraper:
     def __init__(self):
-        # Google AI blog RSS feed
         self.rss_urls = [
             "https://blog.google/technology/ai/rss/"
         ]
