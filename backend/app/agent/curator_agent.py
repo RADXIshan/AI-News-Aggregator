@@ -57,6 +57,12 @@ RANKING METHODOLOGY:
    - Avoid oversimplified content for advanced users
    - Prefer content that challenges and educates
 
+SOURCE PRIORITY BONUS:
+   - TIER 1 (Primary AI Labs): Google, Anthropic, OpenAI, Meta - Add +0.5 to +1.5 bonus to base score
+   - These are leading AI research organizations with direct impact on the field
+   - Prioritize their announcements, research, and product launches
+   - TIER 2 (Other Sources): Apply standard scoring without bonus
+
 SCORING GUIDELINES:
 - 9.5-10.0: Must-read. Directly addresses core interests with high technical value and practical impact
 - 8.5-9.4: Excellent. Strong alignment with interests, significant technical depth or practical value
@@ -72,6 +78,7 @@ CRITICAL RULES:
 - Penalize marketing hype, vague claims, and superficial content
 - Reward technical depth, benchmarks, code, and real-world results
 - Consider recency: breaking news and fresh research rank higher
+- Apply SOURCE PRIORITY BONUS: Google, Anthropic, OpenAI, Meta articles get +0.5 to +1.5 bonus
 - Ensure each article has a unique rank (no ties)
 - Provide specific, technical reasoning for each ranking"""
 
@@ -132,6 +139,24 @@ CONTENT PREFERENCES:
             print(f"Rate limiting: waiting {sleep_time:.1f}s...")
             time.sleep(sleep_time)
         self.last_request_time = time.time()
+    
+    def _get_source_priority_bonus(self, article_type: str) -> float:
+        """
+        Calculate source priority bonus for tier 1 AI labs
+        Returns bonus score to add to base relevance score
+        """
+        # Tier 1: Primary AI Labs (Google, Anthropic, OpenAI, Meta)
+        tier1_sources = ['google', 'anthropic', 'openai', 'meta']
+        
+        article_type_lower = article_type.lower()
+        
+        # Check if article is from a tier 1 source
+        for source in tier1_sources:
+            if source in article_type_lower:
+                return 1.0  # Add 1.0 bonus to tier 1 sources
+        
+        # Tier 2: All other sources get no bonus
+        return 0.0
 
     def rank_digests(self, digests: List[dict]) -> List[RankedArticle]:
         if not digests:
@@ -156,15 +181,17 @@ ARTICLES TO RANK:
 INSTRUCTIONS:
 1. Analyze each article against the user profile using the 5 ranking criteria
 2. Assign a relevance score (0.0-10.0) using the full scale
-3. Rank from 1 (most relevant) to {len(digests)} (least relevant)
-4. Provide specific, technical reasoning for each score
-5. Be critical: penalize hype, reward substance
+3. Give preference to articles from Google, Anthropic, OpenAI, and Meta (tier 1 AI labs)
+4. Rank from 1 (most relevant) to {len(digests)} (least relevant)
+5. Provide specific, technical reasoning for each score
+6. Be critical: penalize hype, reward substance
 
 IMPORTANT:
 - Use the FULL 0-10 scale (don't cluster scores in 7-10 range)
 - Each article must have a UNIQUE rank (no ties)
 - Reasoning should reference specific interests and criteria
-- Consider: interest alignment, technical depth, practical value, novelty, expertise fit
+- Consider: interest alignment, technical depth, practical value, novelty, expertise fit, SOURCE PRIORITY
+- Articles from Google, Anthropic, OpenAI, Meta should rank higher when quality is comparable
 - Keep reasoning concise (1-2 sentences) and avoid line breaks or special characters
 
 Return your response as valid JSON (no line breaks in strings):
@@ -228,9 +255,20 @@ Return your response as valid JSON (no line breaks in strings):
                 ranked_list = RankedDigestList(**result)
                 articles = ranked_list.articles if ranked_list else []
                 
-                # Post-process: ensure proper ranking and score distribution
+                # Post-process: apply source priority bonus and ensure proper ranking
                 if articles:
-                    # Sort by relevance score (descending)
+                    # Apply source priority bonus to tier 1 sources
+                    for article in articles:
+                        # Extract article type from digest_id (format: "article_type:article_id")
+                        article_type = article.digest_id.split(':')[0] if ':' in article.digest_id else ''
+                        bonus = self._get_source_priority_bonus(article_type)
+                        
+                        if bonus > 0:
+                            original_score = article.relevance_score
+                            article.relevance_score = min(10.0, article.relevance_score + bonus)
+                            print(f"✓ Applied +{bonus} bonus to {article_type}: {original_score:.1f} → {article.relevance_score:.1f}")
+                    
+                    # Sort by relevance score (descending) after applying bonuses
                     articles = sorted(articles, key=lambda x: x.relevance_score, reverse=True)
                     
                     # Re-assign ranks to ensure they're sequential
